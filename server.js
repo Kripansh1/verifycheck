@@ -41,6 +41,23 @@ const transporter = nodemailer.createTransport({
   logger: true // log information in console
 });
 
+// Debug endpoint to verify SMTP connectivity quickly
+app.get('/api/debug-email', async (req, res) => {
+  try {
+    const result = await transporter.verify();
+    return res.json({ ok: true, result });
+  } catch (err) {
+    return res.status(500).json({
+      ok: false,
+      message: 'SMTP verify failed',
+      code: err && err.code,
+      response: err && err.response,
+      hint:
+        'Ensure EMAIL_USER is your Gmail and EMAIL_PASS is a 16-char Gmail App Password (no spaces). For Gmail: host smtp.gmail.com, port 587, secure false.'
+    });
+  }
+});
+
 // Verify connection configuration
 transporter.verify(function (error, success) {
   if (error) {
@@ -50,14 +67,23 @@ transporter.verify(function (error, success) {
   }
 });
 
+// Log which email user is configured (masked)
+try {
+  const user = process.env.EMAIL_USER || 'not set';
+  const masked = typeof user === 'string' && user.includes('@')
+    ? user.replace(/(^.).+(@.*$)/, '$1***$2')
+    : 'not set';
+  console.log('Mailer configured with EMAIL_USER:', masked);
+} catch {}
+
 // API endpoint for form submission
 app.post('/api/submit-form', async (req, res) => {
   const { name, company, email, phone, service } = req.body;
   
   console.log('Form submission received:', { name, email, phone, service });
   
-  if (!name || !email || !phone) {
-    return res.status(400).json({ success: false, message: 'Required fields missing' });
+  if (!name || !phone) {
+    return res.status(400).json({ success: false, message: 'Required fields missing (name and phone are required)' });
   }
   
   try {
@@ -70,13 +96,13 @@ app.post('/api/submit-form', async (req, res) => {
         <h2>New Form Submission</h2>
         <p><strong>Name:</strong> ${name}</p>
         <p><strong>Company:</strong> ${company || 'Not provided'}</p>
-        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Email:</strong> ${email || 'Not provided'}</p>
         <p><strong>Phone:</strong> ${phone}</p>
         <p><strong>Service Needed:</strong> ${service || 'Not specified'}</p>
         <p><strong>Submission Time:</strong> ${new Date().toLocaleString()}</p>
       `,
       // Add text alternative for email clients that don't support HTML
-      text: `New Form Submission\nName: ${name}\nCompany: ${company || 'Not provided'}\nEmail: ${email}\nPhone: ${phone}\nService Needed: ${service || 'Not specified'}\nSubmission Time: ${new Date().toLocaleString()}`
+      text: `New Form Submission\nName: ${name}\nCompany: ${company || 'Not provided'}\nEmail: ${email || 'Not provided'}\nPhone: ${phone}\nService Needed: ${service || 'Not specified'}\nSubmission Time: ${new Date().toLocaleString()}`
     };
     
     // Send email
