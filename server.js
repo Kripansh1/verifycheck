@@ -25,17 +25,13 @@ app.use(express.static(path.join(__dirname, 'dist')));
 
 // Nodemailer transporter setup
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.EMAIL_PORT || '587'),
-  secure: process.env.EMAIL_SECURE === 'true',
+  service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER || 'verifykart2@gmail.com',
-    pass: process.env.EMAIL_PASS || 'zccp glnf bxcu ogqz'
+    pass: process.env.EMAIL_APP_PASSWORD || process.env.EMAIL_PASS || 'zccp glnf bxcu ogqz'
   },
   tls: {
-    // do not fail on invalid certs
-    rejectUnauthorized: false,
-    ciphers: 'SSLv3'
+    rejectUnauthorized: false
   },
   debug: true, // show debug output
   logger: true // log information in console
