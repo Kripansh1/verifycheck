@@ -4,8 +4,8 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ success: false, message: 'Method not allowed' });
 
   const { name, company, email, phone, service } = req.body || {};
-  if (!name || !email || !phone) {
-    return res.status(400).json({ success: false, message: 'Required fields missing' });
+  if (!name || !phone) {
+    return res.status(400).json({ success: false, message: 'Required fields missing (name and phone are required)' });
   }
 
   try {
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
         <h2>New Form Submission</h2>
         <p><strong>Name:</strong> ${name}</p>
         <p><strong>Company:</strong> ${company || 'Not provided'}</p>
-        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Email:</strong> ${email || 'Not provided'}</p>
         <p><strong>Phone:</strong> ${phone}</p>
         <p><strong>Service Needed:</strong> ${service || 'Not specified'}</p>
         <p><strong>Submission Time:</strong> ${new Date().toLocaleString()}</p>
@@ -36,7 +36,7 @@ export default async function handler(req, res) {
       text: `New Form Submission
 Name: ${name}
 Company: ${company || 'Not provided'}
-Email: ${email}
+Email: ${email || 'Not provided'}
 Phone: ${phone}
 Service Needed: ${service || 'Not specified'}
 Submission Time: ${new Date().toLocaleString()}`,
