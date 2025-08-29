@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-import nodemailer from 'nodemailer';
+import * as brevo from '@getbrevo/brevo';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
@@ -23,57 +23,41 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Serve static files from the dist directory
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// Nodemailer transporter setup
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,            // use 587 with secure: false if 465 times out
-  secure: true,         // true for 465, false for 587 (STARTTLS)
-  auth: {
-    user: process.env.EMAIL_USER || 'verifykart2@gmail.com',
-    pass: process.env.EMAIL_APP_PASSWORD || process.env.EMAIL_PASS || 'zccp glnf bxcu ogqz'
-  },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 20000,
-  debug: true,
-  logger: true
-});
+// Brevo API setup
+const apiInstance = new brevo.TransactionalEmailsApi();
+apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
 
-// Verify connection on startup and surface detailed errors
+// Verify Brevo API connection on startup
 (async () => {
   try {
-    await transporter.verify();
-    console.log('SMTP verify: ready to send');
+    // Test API connection by attempting to get account info
+    const accountApi = new brevo.AccountApi();
+    accountApi.setApiKey(brevo.AccountApiApiKeys.apiKey, process.env.BREVO_API_KEY);
+    const account = await accountApi.getAccount();
+    console.log('Brevo API connected successfully for:', account.email);
   } catch (e) {
-    console.error('SMTP verify failed at startup:', e && e.message);
+    console.error('Brevo API connection failed:', e && e.message);
   }
 })();
 
-// Debug endpoint to verify SMTP connectivity quickly
+// Debug endpoint to verify Brevo API connectivity quickly
 app.get('/api/debug-email', async (req, res) => {
   try {
-    const result = await transporter.verify();
-    return res.json({ ok: true, result });
+    const accountApi = new brevo.AccountApi();
+    accountApi.setApiKey(brevo.AccountApiApiKeys.apiKey, process.env.BREVO_API_KEY);
+    const account = await accountApi.getAccount();
+    return res.json({ ok: true, email: account.email, plan: account.plan });
   } catch (err) {
     return res.status(500).json({
       ok: false,
-      message: 'SMTP verify failed',
-      code: err && err.code,
-      response: err && err.response,
-      hint:
-        'Ensure EMAIL_USER is your Gmail and EMAIL_PASS is a 16-char Gmail App Password (no spaces). For Gmail: host smtp.gmail.com, port 587, secure false.'
+      message: 'Brevo API verify failed',
+      error: err && err.message,
+      hint: 'Ensure BREVO_API_KEY is set with a valid Brevo API key from https://app.brevo.com/settings/keys/api'
     });
   }
 });
 
-// Verify connection configuration
-transporter.verify(function (error, success) {
-  if (error) {
-    console.log('Server cannot send emails, error: ', error);
-  } else {
-    console.log('Server is ready to send emails');
-  }
-});
+// Legacy transporter verify removed - now using Brevo API
 
 // Log which email user is configured (masked)
 try {
@@ -127,41 +111,37 @@ app.post('/api/submit-form', async (req, res) => {
       text: `New Form Submission\nName: ${name}\nCompany: ${company || 'Not provided'}\nEmail: ${email || 'Not provided'}\nPhone: ${phone}\nService Needed: ${service || 'Not specified'}\nSubmission Time: ${new Date().toLocaleString()}`
     };
     
-    // Send email
+    // Send email using Brevo API
     try {
-      console.log('Attempting to send email...');
-      const info = await transporter.sendMail(mailOptions);
-      console.log('Email sent successfully: ', info.response);
-      console.log('Message ID:', info.messageId);
+      console.log('Attempting to send email via Brevo...');
       
-      // Send success response
+      const sendSmtpEmail = new brevo.SendSmtpEmail();
+      
+      sendSmtpEmail.sender = {
+        name: "VerifyCheck",
+        email: process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_USER || 'verifykart2@gmail.com'
+      };
+      
+      sendSmtpEmail.to = [{
+        email: process.env.BREVO_RECIPIENT_EMAIL || process.env.EMAIL_USER || 'verifykart2@gmail.com',
+        name: "VerifyCheck Team"
+      }];
+      
+      sendSmtpEmail.subject = 'New Form Submission from VerifyCheck Website';
+      sendSmtpEmail.htmlContent = mailOptions.html;
+      sendSmtpEmail.textContent = mailOptions.text;
+
+      const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
+      console.log('Brevo email sent successfully:', result.messageId);
+      
       res.status(200).json({ success: true, message: 'Form submitted successfully' });
     } catch (emailError) {
-      console.error('Detailed email error:', JSON.stringify(emailError, null, 2));
-      console.error('Error stack:', emailError.stack);
-      
-      // Try with a different configuration as fallback
-      try {
-        console.log('Trying fallback email configuration...');
-        const fallbackTransporter = nodemailer.createTransport({
-          service: 'gmail',
-          auth: {
-            user: process.env.EMAIL_USER || 'verifykart2@gmail.com',
-            pass: process.env.EMAIL_PASS || 'zccp glnf bxcu ogqz'
-          }
-        });
-        
-        const fallbackInfo = await fallbackTransporter.sendMail(mailOptions);
-        console.log('Fallback email sent successfully: ', fallbackInfo.response);
-        res.status(200).json({ success: true, message: 'Form submitted successfully via fallback' });
-      } catch (fallbackError) {
-        console.error('Fallback email also failed:', fallbackError);
-        res.status(500).json({ 
-          success: false, 
-          message: 'Failed to submit form. Please try again later.',
-          error: process.env.NODE_ENV === 'development' ? emailError.message : 'Email service unavailable'
-        });
-      }
+      console.error('Brevo email error:', emailError);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to submit form. Please try again later.',
+        error: process.env.NODE_ENV === 'development' ? emailError.message : 'Email service unavailable'
+      });
     }
   } catch (error) {
     console.error('General error in form submission:', error);
