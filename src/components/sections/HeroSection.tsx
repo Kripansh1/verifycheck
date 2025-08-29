@@ -36,6 +36,9 @@ const HeroSection = () => {
       // Send form data via email using Nodemailer
       const result = await sendEmail(formData);
       console.log("Email send result:", result);
+      if (!result?.success) {
+        throw new Error(result?.message || `Submission failed (${result?.status ?? "unknown"})`);
+      }
 
       // Store in session storage that form was submitted
       sessionStorage.setItem("formSubmitted", "true");
@@ -88,7 +91,22 @@ const HeroSection = () => {
       body: JSON.stringify(data),
     });
 
-    return response.json();
+    const raw = await response.text();
+    let parsed: any = null;
+    try {
+      parsed = raw ? JSON.parse(raw) : null;
+    } catch {}
+    if (!response.ok) {
+      return (
+        parsed || {
+          success: false,
+          message: `Request failed (${response.status})`,
+          status: response.status,
+          body: raw,
+        }
+      );
+    }
+    return parsed || { success: true };
   };
   return (
     <section className="relative min-h-[90vh] md:min-h-[80vh] bg-gray-900 overflow-hidden">
