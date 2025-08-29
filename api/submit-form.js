@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import * as brevo from '@getbrevo/brevo';
 
 export default async function handler(req, res) {
   // CORS headers (adjust origin as needed)
@@ -21,48 +21,51 @@ export default async function handler(req, res) {
   }
 
   try {
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,            // use 587 with secure: false if 465 times out
-      secure: true,         // true for 465, false for 587 (STARTTLS)
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_APP_PASSWORD || process.env.EMAIL_PASS,
+    const apiInstance = new brevo.TransactionalEmailsApi();
+    apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
+
+    const sendSmtpEmail = new brevo.SendSmtpEmail();
+
+    sendSmtpEmail.sender = {
+      name: 'VerifyCheck',
+      email: process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_USER,
+    };
+
+    sendSmtpEmail.to = [
+      {
+        email: process.env.BREVO_RECIPIENT_EMAIL || process.env.EMAIL_USER,
+        name: 'VerifyCheck Team',
       },
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 20000,
-    });
+    ];
 
-    // Verify connection configuration; logs detailed SMTP errors if any
-    await transporter.verify();
-
-    const mailOptions = {
-      from: `"VerifyCheck" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER,
-      subject: 'New Form Submission from VerifyCheck Website',
-      html: `
-        <h2>New Form Submission</h2>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Company:</strong> ${company || 'Not provided'}</p>
-        <p><strong>Email:</strong> ${email || 'Not provided'}</p>
-        <p><strong>Phone:</strong> ${phone}</p>
-        <p><strong>Service Needed:</strong> ${service || 'Not specified'}</p>
-        <p><strong>Submission Time:</strong> ${new Date().toLocaleString()}</p>
-      `,
-      text: `New Form Submission
+    sendSmtpEmail.subject = 'New Form Submission from VerifyCheck Website';
+    sendSmtpEmail.htmlContent = `
+      <html>
+        <head></head>
+        <body>
+          <h2>New Form Submission</h2>
+          <p><strong>Name:</strong> ${name}</p>
+          <p><strong>Company:</strong> ${company || 'Not provided'}</p>
+          <p><strong>Email:</strong> ${email || 'Not provided'}</p>
+          <p><strong>Phone:</strong> ${phone}</p>
+          <p><strong>Service Needed:</strong> ${service || 'Not specified'}</p>
+          <p><strong>Submission Time:</strong> ${new Date().toLocaleString()}</p>
+        </body>
+      </html>
+    `;
+    sendSmtpEmail.textContent = `New Form Submission
 Name: ${name}
 Company: ${company || 'Not provided'}
 Email: ${email || 'Not provided'}
 Phone: ${phone}
 Service Needed: ${service || 'Not specified'}
-Submission Time: ${new Date().toLocaleString()}`,
-    };
+Submission Time: ${new Date().toLocaleString()}`;
 
-    await transporter.sendMail(mailOptions);
+    const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
+    console.log('Brevo email sent (api function):', result && (result.messageId || 'OK'));
     return res.status(200).json({ success: true, message: 'Form submitted successfully' });
   } catch (err) {
-    console.error('Email error:', err);
+    console.error('Brevo email error (api function):', err);
     return res.status(500).json({ success: false, message: 'Failed to submit form' });
   }
 }
