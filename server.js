@@ -25,17 +25,29 @@ app.use(express.static(path.join(__dirname, 'dist')));
 
 // Nodemailer transporter setup
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,            // use 587 with secure: false if 465 times out
+  secure: true,         // true for 465, false for 587 (STARTTLS)
   auth: {
     user: process.env.EMAIL_USER || 'verifykart2@gmail.com',
     pass: process.env.EMAIL_APP_PASSWORD || process.env.EMAIL_PASS || 'zccp glnf bxcu ogqz'
   },
-  tls: {
-    rejectUnauthorized: false
-  },
-  debug: true, // show debug output
-  logger: true // log information in console
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 20000,
+  debug: true,
+  logger: true
 });
+
+// Verify connection on startup and surface detailed errors
+(async () => {
+  try {
+    await transporter.verify();
+    console.log('SMTP verify: ready to send');
+  } catch (e) {
+    console.error('SMTP verify failed at startup:', e && e.message);
+  }
+})();
 
 // Debug endpoint to verify SMTP connectivity quickly
 app.get('/api/debug-email', async (req, res) => {
@@ -72,6 +84,20 @@ try {
   console.log('Mailer configured with EMAIL_USER:', masked);
 } catch {}
 
+// Handle CORS preflight explicitly for this endpoint (cors() middleware already set, but this is explicit)
+app.options('/api/submit-form', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  return res.sendStatus(200);
+});
+
+// Return JSON 405 for accidental GETs so the client never parses HTML
+app.get('/api/submit-form', (req, res) => {
+  res.setHeader('Allow', 'POST, OPTIONS');
+  return res.status(405).json({ success: false, message: 'Method not allowed (use POST)' });
+});
+
 // API endpoint for form submission
 app.post('/api/submit-form', async (req, res) => {
   const { name, company, email, phone, service } = req.body;
@@ -85,7 +111,7 @@ app.post('/api/submit-form', async (req, res) => {
   try {
     // Email content
     const mailOptions = {
-      from: process.env.EMAIL_USER || 'verifykart2@gmail.com',
+      from: `"VerifyCheck" <${process.env.EMAIL_USER || 'verifykart2@gmail.com'}>`,
       to: process.env.EMAIL_USER || 'verifykart2@gmail.com', // Send to the same email
       subject: 'New Form Submission from VerifyCheck Website',
       html: `
