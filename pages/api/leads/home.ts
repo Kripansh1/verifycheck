@@ -3,6 +3,9 @@ import dbConnect from '../../../lib/mongodb';
 import HomeLead from '../../../models/HomeLead';
 import { sendLeadEmail } from '../../../lib/mailer';
 
+// Ensure this route runs on the Node.js runtime (not Edge)
+export const config = { runtime: 'nodejs' };
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await dbConnect();
 
@@ -20,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         email,
         company,
         service,
-        source: 'home',
+        source: 'B2B Profile Verification',
         pagePath,
         utm_source,
         utm_medium,

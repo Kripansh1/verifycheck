@@ -2,6 +2,9 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import dbConnect from '../../lib/mongodb';
 import mongoose from 'mongoose';
 
+// Ensure this route runs on the Node.js runtime (not Edge)
+export const config = { runtime: 'nodejs' };
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method not allowed' });

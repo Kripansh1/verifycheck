@@ -3,6 +3,9 @@ import dbConnect from '../../../lib/mongodb';
 import B2CLead from '../../../models/B2CLead';
 import { sendLeadEmail } from '../../../lib/mailer';
 
+// Ensure this route runs on the Node.js runtime (not Edge)
+export const config = { runtime: 'nodejs' };
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Basic CORS handling for cross-origin/form submissions
   const origin = req.headers.origin || '';
@@ -16,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
   res.setHeader('Vary', 'Origin');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, HEAD');
   res.setHeader(
     'Access-Control-Allow-Headers',
     'Content-Type, Authorization, X-Requested-With, X-CSRF-Token'
@@ -28,9 +31,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).end();
   }
 
-  await dbConnect();
+  if (req.method === 'HEAD') {
+    return res.status(200).end();
+  }
 
   if (req.method === 'POST') {
+    // Connect to DB with proper error reporting
+    try {
+      await dbConnect();
+    } catch (e) {
+      console.error('DB connect failed (b2c POST):', e);
+      return res.status(500).json({ success: false, message: 'Database connection failed' });
+    }
+
     const { name, phone, email, service, pagePath, utm_source, utm_medium, utm_campaign, meta } = req.body || {};
 
     if (!name || !phone) {
@@ -43,7 +56,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         phone,
         email,
         service,
-        source: 'b2c',
+        source: 'Employee Verification',
         pagePath,
         utm_source,
         utm_medium,
@@ -65,6 +78,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'GET') {
+    try {
+      await dbConnect();
+    } catch (e) {
+      console.error('DB connect failed (b2c GET):', e);
+      return res.status(500).json({ success: false, message: 'Database connection failed' });
+    }
+
     const { page = '1', limit = '20' } = req.query as { page?: string; limit?: string };
     const p = Math.max(parseInt(page as string) || 1, 1);
     const l = Math.min(Math.max(parseInt(limit as string) || 20, 1), 100);
@@ -82,7 +102,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   }
 
-  res.setHeader('Allow', 'GET, POST');
+  // Unexpected method; log for diagnostics
+  try {
+    console.warn('b2c endpoint received unexpected method:', req.method, 'headers:', req.headers);
+  } catch {}
+  res.setHeader('Allow', 'GET, POST, OPTIONS, HEAD');
   return res.status(405).json({ success: false, message: 'Method not allowed' });
 }
 

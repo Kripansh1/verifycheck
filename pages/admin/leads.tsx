@@ -95,8 +95,8 @@ export default function LeadsDashboard() {
               }}
             >
               <option value="all">All</option>
-              <option value="home">Home Leads</option>
-              <option value="b2c">B2C Leads</option>
+              <option value="home">B2B Profile Verification Leads</option>
+              <option value="b2c">Employee Verification Leads</option>
             </select>
           </div>
 

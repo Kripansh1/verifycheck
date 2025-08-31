@@ -34,7 +34,8 @@ export async function sendLeadEmail(params: {
   lead: Record<string, any>;
   type: 'home' | 'b2c';
 }) {
-  const { to = EMAIL_TO_DEFAULT, subject = `New ${params.type.toUpperCase()} lead`, lead, type } = params;
+  const typeLabel = params.type === 'home' ? 'B2B Profile Verification' : 'Employee Verification';
+  const { to = EMAIL_TO_DEFAULT, subject = `New ${typeLabel} Lead`, lead, type } = params;
 
   const from = EMAIL_FROM || SMTP_USER || 'no-reply@verifycheck';
 
@@ -54,7 +55,7 @@ export async function sendLeadEmail(params: {
       <body>
         <div class="container">
           <div class="header">
-            <h2>New ${type.toUpperCase()} Lead</h2>
+            <h2>New ${typeLabel} Lead</h2>
           </div>
           <div class="grid">
             ${['name','company','email','phone','service','source','pagePath','utm_source','utm_medium','utm_campaign']
@@ -68,7 +69,7 @@ export async function sendLeadEmail(params: {
     </html>
   `;
 
-  const text = `New ${type.toUpperCase()} Lead\n\n` +
+  const text = `New ${typeLabel} Lead\n\n` +
     ['name','company','email','phone','service','source','pagePath','utm_source','utm_medium','utm_campaign']
       .map((k) => `${k}: ${lead[k] ?? '-'}`)
       .join('\n');

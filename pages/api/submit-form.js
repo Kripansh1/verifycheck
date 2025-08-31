@@ -1,5 +1,8 @@
 import nodemailer from 'nodemailer';
 
+// Ensure this route runs on the Node.js runtime (not Edge)
+export const config = { runtime: 'nodejs' };
+
 export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');

@@ -1,8 +1,0 @@
-{
-  "/_app": "pages/_app.js",
-  "/_error": "pages/_error.js",
-  "/_document": "pages/_document.js",
-  "/b2c/profile-verification": "pages/b2c/profile-verification.js",
-  "/thank-you": "pages/thank-you.js",
-  "/": "pages/index.js"
-}

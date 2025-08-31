@@ -3,6 +3,9 @@ import dbConnect from '../../../lib/mongodb';
 import HomeLead from '../../../models/HomeLead';
 import B2CLead from '../../../models/B2CLead';
 
+// Ensure this route runs on the Node.js runtime (not Edge)
+export const config = { runtime: 'nodejs' };
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await dbConnect();
 
