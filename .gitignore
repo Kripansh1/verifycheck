@@ -27,3 +27,8 @@ dist-ssr
 *.sw?
 .qodo
 .qodo
+
+# Build artifacts
+.next/
+# Archives
+dist.zip
