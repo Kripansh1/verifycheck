@@ -2,10 +2,7 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/": "pages/index.js",
-  "/admin/leads": "pages/admin/leads.js",
   "/b2c/profile-verification": "pages/b2c/profile-verification.js",
-  "/api/submit-form": "pages/api/submit-form.js",
-  "/api/leads/b2c": "pages/api/leads/b2c.js",
-  "/thank-you": "pages/thank-you.js"
+  "/thank-you": "pages/thank-you.js",
+  "/": "pages/index.js"
 }
