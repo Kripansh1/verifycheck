@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/router";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 const HeroSection = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
     company: "",
@@ -25,6 +25,30 @@ const HeroSection = () => {
     }));
   };
 
+  type B2CLeadPayload = {
+    name: string;
+    phone: string;
+    email?: string;
+    company?: string;
+    service?: string;
+    source?: string;
+    pagePath?: string;
+  };
+
+  // Persist lead to backend
+  const saveLead = async (payload: B2CLeadPayload) => {
+    const res = await fetch('/api/leads/b2c', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`Lead save failed (${res.status}): ${txt}`);
+    }
+    return res.json();
+  };
+
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,12 +57,12 @@ const HeroSection = () => {
     try {
       console.log("Form submitted with data:", formData);
 
-      // Send form data via email using Nodemailer
-      const result = await sendEmail(formData);
-      console.log("Email send result:", result);
-      if (!result?.success) {
-        throw new Error(result?.message || `Submission failed (${result?.status ?? "unknown"})`);
-      }
+      // Save lead to database (b2c) — server will send the email notification
+      await saveLead({
+        ...formData,
+        source: 'b2c',
+        pagePath: typeof window !== 'undefined' ? window.location.pathname : undefined,
+      });
 
       // Store in session storage that form was submitted
       sessionStorage.setItem("formSubmitted", "true");
@@ -66,7 +90,7 @@ const HeroSection = () => {
       toast.success("Form submitted successfully!");
 
       // Redirect to thank you page
-      navigate("/thank-you");
+      router.push("/thank-you");
     } catch (error) {
       console.error("Error submitting form:", error);
       toast.error("Failed to submit form. Please try again.");
@@ -75,38 +99,20 @@ const HeroSection = () => {
       // since we've implemented the mailto fallback
       sessionStorage.setItem("formSubmitted", "true");
       sessionStorage.setItem("formData", JSON.stringify(formData));
-      navigate("/thank-you");
+      // Best-effort: still try to save lead (b2c)
+      try {
+        await saveLead({
+          ...formData,
+          source: 'b2c',
+          pagePath: typeof window !== 'undefined' ? window.location.pathname : undefined,
+        });
+      } catch (e) {
+        console.warn('Saving b2c lead failed after error (non-blocking):', e);
+      }
+      router.push("/thank-you");
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  // Function to send email
-  const sendEmail = async (data: typeof formData) => {
-    const response = await fetch("/api/submit-form", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
-
-    const raw = await response.text();
-    let parsed: any = null;
-    try {
-      parsed = raw ? JSON.parse(raw) : null;
-    } catch {}
-    if (!response.ok) {
-      return (
-        parsed || {
-          success: false,
-          message: `Request failed (${response.status})`,
-          status: response.status,
-          body: raw,
-        }
-      );
-    }
-    return parsed || { success: true };
   };
   return (
     <section className="relative min-h-[90vh] md:min-h-[80vh] bg-gray-900 overflow-hidden">

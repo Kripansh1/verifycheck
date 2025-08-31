@@ -1,26 +1,37 @@
 import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useRouter } from "next/router";
 
 /**
- * Listens to React Router navigation and pushes a virtual pageview to GTM.
- * Requires GTM snippet to be present globally in index.html (already added).
+ * Listens to Next.js router navigation and pushes a virtual pageview to GTM.
+ * Requires GTM snippet to be present globally in _document.tsx (already added).
  */
 export default function GTMListener() {
-  const location = useLocation();
+  const router = useRouter();
 
   useEffect(() => {
-    // Ensure dataLayer exists
-    (window as any).dataLayer = (window as any).dataLayer || [];
+    const handleRouteChange = (url: string) => {
+      // Ensure dataLayer exists
+      (window as any).dataLayer = (window as any).dataLayer || [];
 
-    (window as any).dataLayer.push({
-      event: "pageview",
-      page: {
-        path: location.pathname + location.search + location.hash,
-        url: window.location.href,
-        title: document.title,
-      },
-    });
-  }, [location.pathname, location.search, location.hash]);
+      (window as any).dataLayer.push({
+        event: "pageview",
+        page: {
+          path: url,
+          url: window.location.href,
+          title: document.title,
+        },
+      });
+    };
+
+    router.events.on('routeChangeComplete', handleRouteChange);
+
+    // Initial page load
+    handleRouteChange(router.asPath);
+
+    return () => {
+      router.events.off('routeChangeComplete', handleRouteChange);
+    };
+  }, [router.events, router.asPath]);
 
   return null;
 }

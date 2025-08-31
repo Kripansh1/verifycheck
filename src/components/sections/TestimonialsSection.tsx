@@ -1,41 +1,43 @@
 import { useState } from "react";
 
-// Import all logo images
-import tcsLogo from '/images/tcs.png';
-import apolloLogo from '/images/apollo.png';
-import laxmiLogo from '/images/laxmi.png';
-import nokiaLogo from '/images/nokia.png';
-import bajajLogo from '/images/bajaj.png';
-import fullertonLogo from '/images/fullerton.png';
-import beloraLogo from '/images/belora.png';
-import cruxLogo from '/images/crux.png';
-import dyLogo from '/images/dy.png';
-import miratechLogo from '/images/miratech.png';
-import netcareLogo from '/images/netcare.png';
-import trivalLogo from '/images/trival.png';
-import whiteboardLogo from '/images/whiteboard.png';
-import xyLogo from '/images/xy.png';
-import zaubaLogo from '/images/zauba.png';
-import liveblackLogo from '/images/liveblack.png';
+// Define logo paths for Next.js public directory
+const logoImages = {
+  tcs: '/images/tcs.png',
+  apollo: '/images/apollo.png',
+  laxmi: '/images/laxmi.png',
+  nokia: '/images/nokia.png',
+  bajaj: '/images/bajaj.png',
+  fullerton: '/images/fullerton.png',
+  belora: '/images/belora.png',
+  crux: '/images/crux.png',
+  dy: '/images/dy.png',
+  miratech: '/images/miratech.png',
+  netcare: '/images/netcare.png',
+  trival: '/images/trival.png',
+  whiteboard: '/images/whiteboard.png',
+  xy: '/images/xy.png',
+  zauba: '/images/zauba.png',
+  liveblack: '/images/liveblack.png'
+};
 
 // Client logos array
 const clientLogos = [
-  { name: "TCS", logo: tcsLogo },
-  { name: "Apollo", logo: apolloLogo },
-  { name: "Laxmi India Finance", logo: laxmiLogo },
-  { name: "Nokia", logo: nokiaLogo },
-  { name: "Bajaj", logo: bajajLogo },
-  { name: "Fullerton", logo: fullertonLogo },
-  { name: "Belora", logo: beloraLogo },
-  { name: "Crux", logo: cruxLogo },
-  { name: "DY", logo: dyLogo },
-  { name: "Miratech", logo: miratechLogo },
-  { name: "Netcare", logo: netcareLogo },
-  { name: "Trival", logo: trivalLogo },
-  { name: "Whiteboard", logo: whiteboardLogo },
-  { name: "XY", logo: xyLogo },
-  { name: "Zauba", logo: zaubaLogo },
-  { name: "LiveBlack", logo: liveblackLogo }
+  { name: "TCS", logo: logoImages.tcs },
+  { name: "Apollo", logo: logoImages.apollo },
+  { name: "Laxmi India Finance", logo: logoImages.laxmi },
+  { name: "Nokia", logo: logoImages.nokia },
+  { name: "Bajaj", logo: logoImages.bajaj },
+  { name: "Fullerton", logo: logoImages.fullerton },
+  { name: "Belora", logo: logoImages.belora },
+  { name: "Crux", logo: logoImages.crux },
+  { name: "DY", logo: logoImages.dy },
+  { name: "Miratech", logo: logoImages.miratech },
+  { name: "Netcare", logo: logoImages.netcare },
+  { name: "Trival", logo: logoImages.trival },
+  { name: "Whiteboard", logo: logoImages.whiteboard },
+  { name: "XY", logo: logoImages.xy },
+  { name: "Zauba", logo: logoImages.zauba },
+  { name: "LiveBlack", logo: logoImages.liveblack }
 ];
 
 // Client testimonials array

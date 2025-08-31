@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import Link from "next/link";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -8,9 +9,9 @@ const Header = () => {
     <header className="py-4 bg-white sticky top-0 z-40 shadow-sm w-full">
       <div className="container mx-auto px-4 flex justify-between items-center">
         <div className="flex items-center space-x-2">
-          <div className="font-bold text-xl text-brand-600">
+          <Link href="/" className="font-bold text-xl text-brand-600 hover:opacity-90 transition-opacity">
             Verify<span className="text-brand-800">Check</span>
-          </div>
+          </Link>
         </div>
 
         {/* Desktop Navigation */}

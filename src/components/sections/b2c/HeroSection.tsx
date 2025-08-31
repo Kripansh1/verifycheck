@@ -3,13 +3,13 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/router";
 
 const B2CHeroSection = () => {
   const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<null | { ok: boolean; message: string }>(null);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   // Smooth-scroll to the enquiry form container
   const scrollToForm = () => {
@@ -26,20 +26,45 @@ const B2CHeroSection = () => {
   };
 
   // same pattern as home page HeroSection
-  const sendEmail = async (data: typeof formData) => {
+  type EmailResp = { success: boolean; message?: string };
+  const sendEmail = async (data: typeof formData): Promise<EmailResp> => {
     const response = await fetch("/api/submit-form", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     const raw = await response.text();
-    let parsed: any = null;
-    try { parsed = raw ? JSON.parse(raw) : null; } catch {}
-    if (!response.ok) {
-      // mirror call site expectations while preventing JSON parse errors
-      return parsed || { success: false, message: `Request failed (${response.status})`, status: response.status, body: raw };
+    let parsed: unknown = null;
+    try {
+      parsed = raw ? JSON.parse(raw) : null;
+    } catch (err) {
+      console.warn('Failed to parse email response JSON:', err);
     }
-    return parsed || { success: true };
+    const coerce = (v: unknown): EmailResp | null => {
+      if (v && typeof v === 'object' && 'success' in v) {
+        return v as EmailResp;
+      }
+      return null;
+    };
+    if (!response.ok) {
+      const p = coerce(parsed);
+      return p ?? { success: false, message: `Request failed (${response.status})` };
+    }
+    return coerce(parsed) ?? { success: true };
+  };
+
+  // Persist B2C lead to backend
+  const saveLead = async (payload: { name: string; phone: string; email?: string; service?: string; source?: string; pagePath?: string }) => {
+    const res = await fetch('/api/leads/b2c', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`Lead save failed (${res.status}): ${txt}`);
+    }
+    return res.json();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,10 +80,19 @@ const B2CHeroSection = () => {
         throw new Error(result?.message || "Submission failed");
       }
 
+      // best-effort save to DB
+      try {
+        await saveLead({ ...formData, source: 'b2c', pagePath: typeof window !== 'undefined' ? window.location.pathname : undefined });
+      } catch (e) {
+        console.warn('Saving b2c lead failed (non-blocking):', e);
+      }
+
       try {
         sessionStorage.setItem("formSubmitted", "true");
         sessionStorage.setItem("formData", JSON.stringify(formData));
-      } catch {}
+      } catch (err) {
+        console.warn('Failed to persist session data:', err);
+      }
 
       if (typeof window !== "undefined" && (window as any).gtag) {
         (window as any).gtag("event", "conversion", {
@@ -76,7 +110,7 @@ const B2CHeroSection = () => {
 
       toast.success("Form submitted successfully!");
       setFormData({ name: "", email: "", phone: "" });
-      navigate("/thank-you");
+      router.push("/thank-you");
     } catch (error) {
       console.error("Error submitting form:", error);
       toast.error("Failed to submit form. Please try again.");
@@ -85,7 +119,13 @@ const B2CHeroSection = () => {
         sessionStorage.setItem("formSubmitted", "true");
         sessionStorage.setItem("formData", JSON.stringify(formData));
       } catch {}
-      navigate("/thank-you");
+      // attempt DB save even on error (best-effort)
+      try {
+        await saveLead({ ...formData, source: 'b2c', pagePath: typeof window !== 'undefined' ? window.location.pathname : undefined });
+      } catch (e) {
+        console.warn('Saving b2c lead failed after error (non-blocking):', e);
+      }
+      router.push("/thank-you");
     } finally {
       setLoading(false);
     }
