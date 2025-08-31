@@ -4,6 +4,30 @@ import B2CLead from '../../../models/B2CLead';
 import { sendLeadEmail } from '../../../lib/mailer';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Basic CORS handling for cross-origin/form submissions
+  const origin = req.headers.origin || '';
+  const allowedOrigins = new Set([
+    'https://www.verifycheck.in',
+    'https://verifycheck.in',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+  ]);
+  if (allowedOrigins.has(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Vary', 'Origin');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, X-Requested-With, X-CSRF-Token'
+  );
+  res.setHeader('Access-Control-Max-Age', '86400');
+
+  if (req.method === 'OPTIONS') {
+    // Preflight
+    return res.status(200).end();
+  }
+
   await dbConnect();
 
   if (req.method === 'POST') {
