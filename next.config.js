@@ -9,8 +9,6 @@ const nextConfig = {
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
-  trailingSlash: true,
-  skipTrailingSlashRedirect: true,
 }
 
 module.exports = nextConfig
