@@ -1,3 +1,4 @@
+import Head from "next/head";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import B2CHeroSection from "@/components/sections/b2c/HeroSection";
@@ -12,21 +13,47 @@ import FloatingWhatsAppButton from "@/components/sections/b2c/FloatingWhatsAppBu
 
 const B2CProfileVerification = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      <Header />
-      <main className="flex-grow">
-        <B2CHeroSection />
-        <WhatsAppVerificationSection />
-        <ServicesOverview />
-        <ProfileVerificationSection />
-        <WhyItMattersSection />
-        <VerificationComponents />
-        <ProcessSection />
-        <WhyChooseSection />
-      </main>
-      <FloatingWhatsAppButton />
-      <Footer />
-    </div>
+    <>
+      <Head>
+        {/* Google Tag Manager for B2C */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+              new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+              j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+              'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+              })(window,document,'script','dataLayer','GTM-NHX8V7V2');
+            `,
+          }}
+        />
+      </Head>
+      <div className="min-h-screen flex flex-col bg-white">
+        {/* Google Tag Manager (noscript) for B2C */}
+        <noscript>
+          <iframe
+            src="https://www.googletagmanager.com/ns.html?id=GTM-NHX8V7V2"
+            height="0"
+            width="0"
+            style={{ display: 'none', visibility: 'hidden' }}
+          />
+        </noscript>
+
+        <Header />
+        <main className="flex-grow">
+          <B2CHeroSection />
+          <WhatsAppVerificationSection />
+          <ServicesOverview />
+          <ProfileVerificationSection />
+          <WhyItMattersSection />
+          <VerificationComponents />
+          <ProcessSection />
+          <WhyChooseSection />
+        </main>
+        <FloatingWhatsAppButton />
+        <Footer />
+      </div>
+    </>
   );
 };
 
