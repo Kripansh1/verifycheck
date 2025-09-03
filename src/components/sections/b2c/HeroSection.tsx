@@ -25,33 +25,7 @@ const B2CHeroSection = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // same pattern as home page HeroSection
-  type EmailResp = { success: boolean; message?: string };
-  const sendEmail = async (data: typeof formData): Promise<EmailResp> => {
-    const response = await fetch("/api/submit-form", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    const raw = await response.text();
-    let parsed: unknown = null;
-    try {
-      parsed = raw ? JSON.parse(raw) : null;
-    } catch (err) {
-      console.warn('Failed to parse email response JSON:', err);
-    }
-    const coerce = (v: unknown): EmailResp | null => {
-      if (v && typeof v === 'object' && 'success' in v) {
-        return v as EmailResp;
-      }
-      return null;
-    };
-    if (!response.ok) {
-      const p = coerce(parsed);
-      return p ?? { success: false, message: `Request failed (${response.status})` };
-    }
-    return coerce(parsed) ?? { success: true };
-  };
+
 
   // Persist B2C lead to backend
   const saveLead = async (payload: { name: string; phone: string; email?: string; service?: string; source?: string; pagePath?: string }) => {
@@ -74,18 +48,12 @@ const B2CHeroSection = () => {
     try {
       console.log("Form submitted with data:", formData);
 
-      const result = await sendEmail(formData);
-      console.log("Email send result:", result);
-      if (!result?.success) {
-        throw new Error(result?.message || "Submission failed");
-      }
-
-      // best-effort save to DB
-      try {
-        await saveLead({ ...formData, source: 'Employee Verification', pagePath: typeof window !== 'undefined' ? window.location.pathname : undefined });
-      } catch (e) {
-        console.warn('Saving b2c lead failed (non-blocking):', e);
-      }
+      // Save lead to database (B2C) — server will send the email notification
+      await saveLead({
+        ...formData,
+        source: 'Employee Verification',
+        pagePath: typeof window !== 'undefined' ? window.location.pathname : undefined
+      });
 
       try {
         sessionStorage.setItem("formSubmitted", "true");
