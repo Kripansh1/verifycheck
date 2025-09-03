@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { validateBusinessEmail } from "../../../lib/emailValidation";
 
 const HeroSection = () => {
   const router = useRouter();
@@ -13,6 +14,7 @@ const HeroSection = () => {
     service: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   // Handle input changes
   const handleInputChange = (
@@ -23,9 +25,21 @@ const HeroSection = () => {
       ...prev,
       [name]: value,
     }));
+
+    // Validate business email on change
+    if (name === 'email' && value) {
+      const validation = validateBusinessEmail(value);
+      if (!validation.isValid || !validation.isBusiness) {
+        setEmailError(validation.message || 'Invalid business email');
+      } else {
+        setEmailError(null);
+      }
+    } else if (name === 'email' && !value) {
+      setEmailError(null);
+    }
   };
 
-  type B2CLeadPayload = {
+  type HomeLeadPayload = {
     name: string;
     phone: string;
     email?: string;
@@ -35,9 +49,9 @@ const HeroSection = () => {
     pagePath?: string;
   };
 
-  // Persist lead to backend
-  const saveLead = async (payload: B2CLeadPayload) => {
-    const res = await fetch('/api/leads/b2c', {
+  // Persist lead to backend (Home/B2B leads)
+  const saveLead = async (payload: HomeLeadPayload) => {
+    const res = await fetch('/api/leads/home', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -52,15 +66,27 @@ const HeroSection = () => {
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate business email before submission
+    if (formData.email) {
+      const validation = validateBusinessEmail(formData.email);
+      if (!validation.isValid || !validation.isBusiness) {
+        setEmailError(validation.message || 'Invalid business email');
+        toast.error(validation.message || 'Please enter a valid business email');
+        return;
+      }
+    }
+
     setIsSubmitting(true);
+    setEmailError(null);
 
     try {
       console.log("Form submitted with data:", formData);
 
-      // Save lead to database (b2c) — server will send the email notification
+      // Save lead to database (home/B2B) — server will send the email notification
       await saveLead({
         ...formData,
-        source: 'b2c',
+        source: 'Home Page',
         pagePath: typeof window !== 'undefined' ? window.location.pathname : undefined,
       });
 
@@ -99,15 +125,15 @@ const HeroSection = () => {
       // since we've implemented the mailto fallback
       sessionStorage.setItem("formSubmitted", "true");
       sessionStorage.setItem("formData", JSON.stringify(formData));
-      // Best-effort: still try to save lead (b2c)
+      // Best-effort: still try to save lead (home/B2B)
       try {
         await saveLead({
           ...formData,
-          source: 'b2c',
+          source: 'Home Page',
           pagePath: typeof window !== 'undefined' ? window.location.pathname : undefined,
         });
       } catch (e) {
-        console.warn('Saving b2c lead failed after error (non-blocking):', e);
+        console.warn('Saving home lead failed after error (non-blocking):', e);
       }
       router.push("/thank-you");
     } finally {
@@ -255,7 +281,7 @@ const HeroSection = () => {
                   htmlFor="hero-email"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Email Address
+                  Business Email Address
                 </label>
                 <input
                   type="email"
@@ -263,10 +289,17 @@ const HeroSection = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-brand-500 focus:border-brand-500"
-                  placeholder="you@example.com"
+                  className={`w-full px-3 py-2 border rounded-md focus:ring-brand-500 focus:border-brand-500 ${emailError ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    }`}
+                  placeholder="you@company.com"
                   required
                 />
+                {emailError && (
+                  <p className="mt-1 text-sm text-red-600">{emailError}</p>
+                )}
+                <p className="mt-1 text-xs text-gray-500">
+                  Business email required. Free email domains (Gmail, Yahoo, etc.) are not accepted.
+                </p>
               </div>
 
               <div className="mb-4">

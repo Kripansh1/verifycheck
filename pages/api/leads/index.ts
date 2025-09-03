@@ -18,6 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     page = '1',
     limit = '20',
     type = 'all', // 'home' | 'b2c' | 'all'
+    source = 'all', // specific source filter
     search = '', // matches name, email, phone, company
     from, // ISO date string
     to,   // ISO date string
@@ -32,6 +33,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const baseFilter: any = {};
   if (Object.keys(dateFilter).length) baseFilter.createdAt = dateFilter;
+
+  // Add source filter if specified
+  if (source && source !== 'all') {
+    baseFilter.source = source;
+  }
 
   if (search) {
     const regex = new RegExp(search, 'i');

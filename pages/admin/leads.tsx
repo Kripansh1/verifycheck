@@ -7,7 +7,8 @@ interface LeadItem {
   email?: string;
   company?: string;
   service?: string;
-  source?: string;
+  source: string;
+  type: 'B2B' | 'B2C';
   pagePath?: string;
   utm_source?: string;
   utm_medium?: string;
@@ -18,7 +19,7 @@ interface LeadItem {
 
 interface ApiResponse {
   success: boolean;
-  type: 'home' | 'b2c' | 'all';
+  type: 'b2b' | 'b2c' | 'all';
   total: number;
   page: number;
   limit: number;
@@ -27,7 +28,8 @@ interface ApiResponse {
 }
 
 export default function LeadsDashboard() {
-  const [type, setType] = useState<'all' | 'home' | 'b2c'>('all');
+  const [type, setType] = useState<'all' | 'b2b' | 'b2c'>('all');
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [from, setFrom] = useState<string>('');
   const [to, setTo] = useState<string>('');
@@ -40,14 +42,17 @@ export default function LeadsDashboard() {
 
   const query = useMemo(() => {
     const params = new URLSearchParams();
-    params.set('type', type);
+    // Map frontend "b2b" to backend "home"
+    const apiType = type === 'b2b' ? 'home' : type;
+    params.set('type', apiType);
     params.set('page', String(page));
     params.set('limit', String(limit));
+    if (sourceFilter !== 'all') params.set('source', sourceFilter);
     if (search.trim()) params.set('search', search.trim());
     if (from) params.set('from', new Date(from).toISOString());
     if (to) params.set('to', new Date(to).toISOString());
     return params.toString();
-  }, [type, page, limit, search, from, to]);
+  }, [type, sourceFilter, page, limit, search, from, to]);
 
   useEffect(() => {
     let ignore = false;
@@ -83,20 +88,65 @@ export default function LeadsDashboard() {
       <div className="mx-auto max-w-7xl px-4 py-6">
         <h1 className="text-2xl font-semibold mb-4">Leads Dashboard</h1>
 
-        <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-5">
-          <div className="md:col-span-1">
+        {/* Statistics Cards */}
+        {data?.totals && (
+          <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="rounded-lg bg-white p-4 shadow">
+              <div className="text-2xl font-bold text-blue-600">{data.totals.home + data.totals.b2c}</div>
+              <div className="text-sm text-gray-600">Total Leads</div>
+            </div>
+            <div className="rounded-lg bg-white p-4 shadow">
+              <div className="text-2xl font-bold text-green-600">{data.totals.home}</div>
+              <div className="text-sm text-gray-600">B2B Leads</div>
+            </div>
+            <div className="rounded-lg bg-white p-4 shadow">
+              <div className="text-2xl font-bold text-purple-600">{data.totals.b2c}</div>
+              <div className="text-sm text-gray-600">B2C Leads</div>
+            </div>
+          </div>
+        )}
+
+        <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-6">
+          <div>
             <label className="block text-sm font-medium mb-1">Type</label>
             <select
               className="w-full rounded border border-gray-300 bg-white px-3 py-2"
               value={type}
               onChange={(e) => {
                 setType(e.target.value as any);
+                setSourceFilter('all'); // Reset source filter when type changes
                 resetToFirstPage();
               }}
             >
-              <option value="all">All</option>
-              <option value="home">B2B Profile Verification Leads</option>
-              <option value="b2c">Employee Verification Leads</option>
+              <option value="all">All Types</option>
+              <option value="b2b">B2B Leads</option>
+              <option value="b2c">B2C Leads</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Source</label>
+            <select
+              className="w-full rounded border border-gray-300 bg-white px-3 py-2"
+              value={sourceFilter}
+              onChange={(e) => {
+                setSourceFilter(e.target.value);
+                resetToFirstPage();
+              }}
+            >
+              <option value="all">All Sources</option>
+              {type === 'all' && (
+                <>
+                  <option value="Home Page">Home Page</option>
+                  <option value="Employee Verification">Employee Verification</option>
+                </>
+              )}
+              {type === 'b2b' && (
+                <option value="Home Page">Home Page</option>
+              )}
+              {type === 'b2c' && (
+                <option value="Employee Verification">Employee Verification</option>
+              )}
             </select>
           </div>
 
@@ -104,7 +154,7 @@ export default function LeadsDashboard() {
             <label className="block text-sm font-medium mb-1">Search</label>
             <input
               type="text"
-              placeholder="Search name, email, phone, company, service, source"
+              placeholder="Search name, email, phone, company, service"
               className="w-full rounded border border-gray-300 px-3 py-2"
               value={search}
               onChange={(e) => {
@@ -205,25 +255,54 @@ export default function LeadsDashboard() {
                 </tr>
               )}
 
-              {!loading && !error && data && data.items.map((lead) => (
-                <tr key={lead._id} className="hover:bg-gray-50">
-                  <td className="px-4 py-2 text-sm">
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                      (lead._type || (type === 'home' ? 'home' : 'b2c')) === 'home'
+              {!loading && !error && data && data.items.map((lead) => {
+                // Map the backend types to display types
+                // Priority: lead.type > _type mapping > fallback based on company field
+                let leadType = 'B2C'; // default
+                if (lead.type === 'B2B' || lead.type === 'B2C') {
+                  leadType = lead.type;
+                } else if (lead._type === 'home') {
+                  leadType = 'B2B';
+                } else if (lead._type === 'b2c') {
+                  leadType = 'B2C';
+                } else if (lead.company) {
+                  // Fallback: if has company field, likely B2B
+                  leadType = 'B2B';
+                }
+                return (
+                  <tr key={lead._id} className="hover:bg-gray-50">
+                    <td className="px-4 py-2 text-sm">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${leadType === 'B2B'
                         ? 'bg-blue-100 text-blue-700'
-                        : 'bg-green-100 text-green-700'
-                    }`}>
-                      {lead._type || (type === 'all' ? (lead.company ? 'home' : 'b2c') : type)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2 text-sm font-medium text-gray-900">{lead.name || '-'}</td>
-                  <td className="px-4 py-2 text-sm text-gray-700">{lead.phone || '-'}</td>
-                  <td className="px-4 py-2 text-sm text-gray-700">{lead.email || '-'}</td>
-                  <td className="px-4 py-2 text-sm text-gray-700">{lead.company || lead.service || '-'}</td>
-                  <td className="px-4 py-2 text-sm text-gray-700">{lead.source || '-'}</td>
-                  <td className="px-4 py-2 text-sm text-gray-700">{new Date(lead.createdAt).toLocaleString()}</td>
-                </tr>
-              ))}
+                        : 'bg-purple-100 text-purple-700'
+                        }`}>
+                        {leadType}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 text-sm font-medium text-gray-900">{lead.name || '-'}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{lead.phone || '-'}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">
+                      {lead.email ? (
+                        <div className="flex items-center gap-1">
+                          <span>{lead.email}</span>
+                          {leadType === 'B2B' && (
+                            <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-green-100 text-green-700">
+                              Business
+                            </span>
+                          )}
+                        </div>
+                      ) : '-'}
+                    </td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{lead.company || lead.service || '-'}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">
+                      <span className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700">
+                        {lead.source || '-'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{new Date(lead.createdAt).toLocaleString()}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

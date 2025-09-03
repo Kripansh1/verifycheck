@@ -6,7 +6,8 @@ export interface IHomeLead extends mongoose.Document {
   email?: string;
   company?: string;
   service?: string;
-  source?: string; // e.g., 'home'
+  source: string; // Specific source like 'Home Page', 'Contact Form', etc.
+  type: 'B2B'; // Lead type for categorization
   pagePath?: string;
   utm_source?: string;
   utm_medium?: string;
@@ -22,7 +23,8 @@ const HomeLeadSchema = new Schema<IHomeLead>(
     email: { type: String, trim: true },
     company: { type: String, trim: true },
     service: { type: String, trim: true },
-    source: { type: String, default: 'home' },
+    source: { type: String, required: true, default: 'Home Page' },
+    type: { type: String, required: true, default: 'B2B', enum: ['B2B'] },
     pagePath: { type: String },
     utm_source: { type: String },
     utm_medium: { type: String },

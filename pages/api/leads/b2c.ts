@@ -57,6 +57,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         email,
         service,
         source: 'Employee Verification',
+        type: 'B2C',
         pagePath,
         utm_source,
         utm_medium,
@@ -105,7 +106,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // Unexpected method; log for diagnostics
   try {
     console.warn('b2c endpoint received unexpected method:', req.method, 'headers:', req.headers);
-  } catch {}
+  } catch { }
   res.setHeader('Allow', 'GET, POST, OPTIONS, HEAD');
   return res.status(405).json({ success: false, message: 'Method not allowed' });
 }

@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import dbConnect from '../../../lib/mongodb';
 import HomeLead from '../../../models/HomeLead';
 import { sendLeadEmail } from '../../../lib/mailer';
+import { validateBusinessEmail } from '../../../lib/emailValidation';
 
 // Ensure this route runs on the Node.js runtime (not Edge)
 export const config = { runtime: 'nodejs' };
@@ -13,7 +14,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { name, phone, email, company, service, pagePath, utm_source, utm_medium, utm_campaign, meta } = req.body || {};
 
     if (!name || !phone) {
-      return res.status(400).json({ success: false, message: 'name and phone are required' });
+      return res.status(400).json({ success: false, message: 'Name and phone are required' });
+    }
+
+    // Validate business email if provided
+    if (email) {
+      const emailValidation = validateBusinessEmail(email);
+      if (!emailValidation.isValid) {
+        return res.status(400).json({
+          success: false,
+          message: emailValidation.message || 'Invalid email address',
+          field: 'email'
+        });
+      }
+      if (!emailValidation.isBusiness) {
+        return res.status(400).json({
+          success: false,
+          message: emailValidation.message || 'Business email required. Free email domains (Gmail, Yahoo, Hotmail, etc.) are not accepted for business inquiries.',
+          field: 'email'
+        });
+      }
     }
 
     try {
@@ -23,7 +43,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         email,
         company,
         service,
-        source: 'B2B Profile Verification',
+        source: 'Home Page',
+        type: 'B2B',
         pagePath,
         utm_source,
         utm_medium,

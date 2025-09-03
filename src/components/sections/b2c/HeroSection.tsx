@@ -82,7 +82,7 @@ const B2CHeroSection = () => {
 
       // best-effort save to DB
       try {
-        await saveLead({ ...formData, source: 'b2c', pagePath: typeof window !== 'undefined' ? window.location.pathname : undefined });
+        await saveLead({ ...formData, source: 'Employee Verification', pagePath: typeof window !== 'undefined' ? window.location.pathname : undefined });
       } catch (e) {
         console.warn('Saving b2c lead failed (non-blocking):', e);
       }
@@ -118,10 +118,10 @@ const B2CHeroSection = () => {
       try {
         sessionStorage.setItem("formSubmitted", "true");
         sessionStorage.setItem("formData", JSON.stringify(formData));
-      } catch {}
+      } catch { }
       // attempt DB save even on error (best-effort)
       try {
-        await saveLead({ ...formData, source: 'b2c', pagePath: typeof window !== 'undefined' ? window.location.pathname : undefined });
+        await saveLead({ ...formData, source: 'Employee Verification', pagePath: typeof window !== 'undefined' ? window.location.pathname : undefined });
       } catch (e) {
         console.warn('Saving b2c lead failed after error (non-blocking):', e);
       }
