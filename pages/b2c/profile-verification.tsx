@@ -27,6 +27,19 @@ const B2CProfileVerification = () => {
             `,
           }}
         />
+
+        {/* Google tag (gtag.js) */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17513233006" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'AW-17513233006');
+            `,
+          }}
+        />
       </Head>
       <div className="min-h-screen flex flex-col bg-white">
         {/* Google Tag Manager (noscript) for B2C */}
