@@ -1,4 +1,5 @@
 import Head from "next/head";
+import Script from "next/script";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import B2CHeroSection from "@/components/sections/b2c/HeroSection";
@@ -15,20 +16,24 @@ const B2CProfileVerification = () => {
   return (
     <>
       <Head>
-        {/* Google Tag Manager */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-              new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-              j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-              'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-              })(window,document,'script','dataLayer','GTM-NV86HSCC');
-            `,
-          }}
-        />
-        {/* End Google Tag Manager */}
+        <title>Profile Verification - VerifyCheck B2C Services</title>
+        <meta name="description" content="Professional profile and employee verification services for individuals. Quick, secure, and reliable background checks." />
       </Head>
+
+      {/* Google Tag Manager */}
+      <Script
+        id="gtm-b2c-script"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: `
+            (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+            j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+            'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+            })(window,document,'script','dataLayer','GTM-NV86HSCC');
+          `,
+        }}
+      />
       <div className="min-h-screen flex flex-col bg-white">
         {/* Google Tag Manager (noscript) */}
         <noscript>
