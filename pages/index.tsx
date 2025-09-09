@@ -1,6 +1,5 @@
 import Head from "next/head";
 import Header from "@/components/layout/Header";
-import GTM from "@/components/analytics/GTM";
 import Footer from "@/components/layout/Footer";
 import HeroSection from "@/components/sections/HeroSection";
 import PainPointSection from "@/components/sections/PainPointSection";
@@ -21,9 +20,6 @@ const Index = () => {
         <title>VerifyCheck - Professional Background Verification Services</title>
         <meta name="description" content="Comprehensive background verification services for businesses and individuals. Fast, reliable, and secure verification solutions." />
       </Head>
-
-      {/* Google Tag Manager */}
-      <GTM gtmId="GTM-NV86HSCC" />
 
       <div className="min-h-screen flex flex-col">
         <Header />

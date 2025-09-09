@@ -1,6 +1,5 @@
 import Head from "next/head";
 import Header from "@/components/layout/Header";
-import GTM from "@/components/analytics/GTM";
 import Footer from "@/components/layout/Footer";
 import B2CHeroSection from "@/components/sections/b2c/HeroSection";
 import WhatsAppVerificationSection from "@/components/sections/b2c/WhatsAppVerificationSection";
@@ -19,9 +18,6 @@ const B2CProfileVerification = () => {
         <title>Profile Verification - VerifyCheck B2C Services</title>
         <meta name="description" content="Professional profile and employee verification services for individuals. Quick, secure, and reliable background checks." />
       </Head>
-
-      {/* Google Tag Manager for B2C */}
-      <GTM gtmId="GTM-NV86HSCC" />
 
       <div className="min-h-screen flex flex-col bg-white">
 
