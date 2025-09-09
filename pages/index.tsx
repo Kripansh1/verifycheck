@@ -1,3 +1,4 @@
+import Head from "next/head";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import HeroSection from "@/components/sections/HeroSection";
@@ -14,23 +15,50 @@ import ContactSection from "@/components/sections/ContactSection";
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-grow">
-        <HeroSection />
-        <PainPointSection />
-        <BenefitsSection />
-        <DifferentiatorSection />
-        <TestimonialsSection />
-        <PortalSection />
-        <IndustriesSection />
-        <HowItWorksSection />
-        <TrustSecuritySection />
-        <FaqSection />
-        <ContactSection />
-      </main>
-      <Footer />
-    </div>
+    <>
+      <Head>
+        {/* Google Tag Manager */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+              new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+              j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+              'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+              })(window,document,'script','dataLayer','GTM-NV86HSCC');
+            `,
+          }}
+        />
+        {/* End Google Tag Manager */}
+      </Head>
+      <div className="min-h-screen flex flex-col">
+        {/* Google Tag Manager (noscript) */}
+        <noscript>
+          <iframe
+            src="https://www.googletagmanager.com/ns.html?id=GTM-NV86HSCC"
+            height="0"
+            width="0"
+            style={{ display: 'none', visibility: 'hidden' }}
+          />
+        </noscript>
+        {/* End Google Tag Manager (noscript) */}
+        <Header />
+        <main className="flex-grow">
+          <HeroSection />
+          <PainPointSection />
+          <BenefitsSection />
+          <DifferentiatorSection />
+          <TestimonialsSection />
+          <PortalSection />
+          <IndustriesSection />
+          <HowItWorksSection />
+          <TrustSecuritySection />
+          <FaqSection />
+          <ContactSection />
+        </main>
+        <Footer />
+      </div>
+    </>
   );
 };
 

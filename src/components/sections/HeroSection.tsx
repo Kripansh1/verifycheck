@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { validateBusinessEmail } from "../../../lib/emailValidation";
+import { trackB2BForm, initializeGTM } from "../../../lib/gtm";
 
 const HeroSection = () => {
   const router = useRouter();
@@ -15,6 +16,20 @@ const HeroSection = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [formStarted, setFormStarted] = useState(false);
+
+  // Initialize GTM on component mount
+  useEffect(() => {
+    initializeGTM();
+  }, []);
+
+  // Track form start on first interaction
+  const handleFormStart = () => {
+    if (!formStarted) {
+      trackB2BForm('start', formData);
+      setFormStarted(true);
+    }
+  };
 
   // Handle input changes
   const handleInputChange = (
@@ -67,12 +82,17 @@ const HeroSection = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Track form submission attempt
+    trackB2BForm('submit', formData);
+
     // Validate business email before submission
     if (formData.email) {
       const validation = validateBusinessEmail(formData.email);
       if (!validation.isValid || !validation.isBusiness) {
         setEmailError(validation.message || 'Invalid business email');
         toast.error(validation.message || 'Please enter a valid business email');
+        // Track validation error
+        trackB2BForm('error', formData, validation.message || 'Invalid business email');
         return;
       }
     }
@@ -84,11 +104,14 @@ const HeroSection = () => {
       console.log("Form submitted with data:", formData);
 
       // Save lead to database (home/B2B) — server will send the email notification
-      await saveLead({
+      const leadResponse = await saveLead({
         ...formData,
         source: 'Home Page',
         pagePath: typeof window !== 'undefined' ? window.location.pathname : undefined,
       });
+
+      // Track successful form submission
+      trackB2BForm('success', { ...formData, leadId: leadResponse?.data?._id });
 
       // Store in session storage that form was submitted
       sessionStorage.setItem("formSubmitted", "true");
@@ -119,6 +142,11 @@ const HeroSection = () => {
       router.push("/thank-you");
     } catch (error) {
       console.error("Error submitting form:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to submit form';
+
+      // Track form submission error
+      trackB2BForm('error', formData, errorMessage);
+
       toast.error("Failed to submit form. Please try again.");
 
       // Even if there's an error, we'll still redirect to the thank you page
@@ -251,6 +279,7 @@ const HeroSection = () => {
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
+                    onFocus={handleFormStart}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-brand-500 focus:border-brand-500"
                     placeholder="Your name"
                     required

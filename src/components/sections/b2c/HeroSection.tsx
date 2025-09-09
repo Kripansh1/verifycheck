@@ -1,15 +1,30 @@
-import { useState, type ChangeEvent } from "react";
+import { useState, useEffect, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useRouter } from "next/router";
+import { trackB2CForm, initializeGTM } from "../../../../lib/gtm";
 
 const B2CHeroSection = () => {
   const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<null | { ok: boolean; message: string }>(null);
+  const [formStarted, setFormStarted] = useState(false);
   const router = useRouter();
+
+  // Initialize GTM on component mount
+  useEffect(() => {
+    initializeGTM();
+  }, []);
+
+  // Track form start on first interaction
+  const handleFormStart = () => {
+    if (!formStarted) {
+      trackB2CForm('start', formData);
+      setFormStarted(true);
+    }
+  };
 
   // Smooth-scroll to the enquiry form container
   const scrollToForm = () => {
@@ -45,15 +60,22 @@ const B2CHeroSection = () => {
     e.preventDefault();
     setLoading(true);
     setStatus(null);
+
+    // Track form submission attempt
+    trackB2CForm('submit', formData);
+
     try {
       console.log("Form submitted with data:", formData);
 
       // Save lead to database (B2C) — server will send the email notification
-      await saveLead({
+      const leadResponse = await saveLead({
         ...formData,
         source: 'Employee Verification',
         pagePath: typeof window !== 'undefined' ? window.location.pathname : undefined
       });
+
+      // Track successful form submission
+      trackB2CForm('success', { ...formData, leadId: leadResponse?.data?._id });
 
       try {
         sessionStorage.setItem("formSubmitted", "true");
@@ -81,6 +103,11 @@ const B2CHeroSection = () => {
       router.push("/thank-you");
     } catch (error) {
       console.error("Error submitting form:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to submit form';
+
+      // Track form submission error
+      trackB2CForm('error', formData, errorMessage);
+
       toast.error("Failed to submit form. Please try again.");
       // keep same fallback behavior as home page
       try {
@@ -174,6 +201,7 @@ const B2CHeroSection = () => {
                       type="text"
                       value={formData.name}
                       onChange={handleChange}
+                      onFocus={handleFormStart}
                       placeholder="Your full name"
                       className="w-full bg-card text-foreground border border-border rounded-md px-3 py-2.5 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary"
                     />
