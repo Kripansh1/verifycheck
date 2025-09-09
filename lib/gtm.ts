@@ -35,6 +35,29 @@ export const LEAD_TYPES = {
 export function initializeGTM(): void {
   if (typeof window !== 'undefined') {
     (window as any).dataLayer = (window as any).dataLayer || [];
+    console.log('GTM DataLayer initialized:', (window as any).dataLayer);
+  }
+}
+
+/**
+ * Debug function to check GTM status
+ */
+export function debugGTM(): void {
+  if (typeof window !== 'undefined') {
+    console.log('=== GTM Debug Info ===');
+    console.log('DataLayer exists:', !!(window as any).dataLayer);
+    console.log('DataLayer length:', (window as any).dataLayer?.length || 0);
+    console.log('GTM loaded:', !!(window as any).google_tag_manager);
+    console.log('GTM Container ID:', GTM_ID);
+
+    // Check if GTM script is loaded
+    const gtmScript = document.querySelector(`script[src*="${GTM_ID}"]`);
+    console.log('GTM script element found:', !!gtmScript);
+
+    if ((window as any).dataLayer) {
+      console.log('Recent DataLayer events:', (window as any).dataLayer.slice(-5));
+    }
+    console.log('======================');
   }
 }
 
