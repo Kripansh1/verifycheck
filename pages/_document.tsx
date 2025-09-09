@@ -18,6 +18,22 @@ export default function Document() {
               new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
               j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+
+              // Debug function for GTM
+              w.debugGTM = function() {
+                console.log('=== GTM Debug Info ===');
+                console.log('Container ID: GTM-NV86HSCC');
+                console.log('DataLayer exists:', !!w.dataLayer);
+                console.log('DataLayer length:', w.dataLayer ? w.dataLayer.length : 0);
+                console.log('GTM script loaded:', !!d.querySelector('script[src*="googletagmanager.com/gtm.js"]'));
+                console.log('Google Tag Manager object:', !!w.google_tag_manager);
+                if (w.dataLayer) {
+                  console.log('Recent DataLayer events:', w.dataLayer.slice(-5));
+                }
+                console.log('======================');
+              };
+
+              console.log('GTM initialized for container: GTM-NV86HSCC');
               })(window,document,'script','dataLayer','GTM-NV86HSCC');
             `,
           }}
