@@ -64,18 +64,32 @@ const HeroSection = () => {
     pagePath?: string;
   };
 
-  // Persist lead to backend (Home/B2B leads)
+  // Persist lead to backend (Home/B2B leads) with timeout
   const saveLead = async (payload: HomeLeadPayload) => {
-    const res = await fetch('/api/leads/home', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) {
-      const txt = await res.text();
-      throw new Error(`Lead save failed (${res.status}): ${txt}`);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+    try {
+      const res = await fetch('/api/leads/home', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`Lead save failed (${res.status}): ${txt}`);
+      }
+      return res.json();
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Request timeout - please try again');
+      }
+      throw error;
     }
-    return res.json();
   };
 
   // Handle form submission
@@ -153,16 +167,6 @@ const HeroSection = () => {
       // since we've implemented the mailto fallback
       sessionStorage.setItem("formSubmitted", "true");
       sessionStorage.setItem("formData", JSON.stringify(formData));
-      // Best-effort: still try to save lead (home/B2B)
-      try {
-        await saveLead({
-          ...formData,
-          source: 'Home Page',
-          pagePath: typeof window !== 'undefined' ? window.location.pathname : undefined,
-        });
-      } catch (e) {
-        console.warn('Saving home lead failed after error (non-blocking):', e);
-      }
       router.push("/thank-you");
     } finally {
       setIsSubmitting(false);
