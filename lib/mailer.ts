@@ -12,8 +12,20 @@ let transporter: nodemailer.Transporter | null = null;
 export function getTransporter() {
   if (!transporter) {
     if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
+      console.error('SMTP configuration missing:', {
+        host: !!SMTP_HOST,
+        user: !!SMTP_USER,
+        pass: !!SMTP_PASS
+      });
       throw new Error('SMTP configuration missing (host/user/pass)');
     }
+
+    console.log('Creating SMTP transporter:', {
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: SMTP_PORT === 465 || process.env.EMAIL_SECURE === 'true',
+      user: SMTP_USER?.substring(0, 3) + '***'
+    });
 
     transporter = nodemailer.createTransport({
       host: SMTP_HOST,
@@ -34,8 +46,7 @@ export async function sendLeadEmail(params: {
   lead: Record<string, any>;
   type: 'home' | 'b2c';
 }) {
-  const typeLabel = params.type === 'home' ? 'B2B Profile Verification' : 'Employee Verification';
-  const { to = EMAIL_TO_DEFAULT, subject = `New ${typeLabel} Lead`, lead, type } = params;
+  const { to = EMAIL_TO_DEFAULT, subject = `New ${params.type.toUpperCase()} lead`, lead, type } = params;
 
   const from = EMAIL_FROM || SMTP_USER || 'no-reply@verifycheck';
 
@@ -55,7 +66,7 @@ export async function sendLeadEmail(params: {
       <body>
         <div class="container">
           <div class="header">
-            <h2>New ${typeLabel} Lead</h2>
+            <h2>New ${type.toUpperCase()} Lead</h2>
           </div>
           <div class="grid">
             ${['name', 'company', 'email', 'phone', 'service', 'source', 'pagePath', 'utm_source', 'utm_medium', 'utm_campaign']
@@ -69,12 +80,19 @@ export async function sendLeadEmail(params: {
     </html>
   `;
 
-  const text = `New ${typeLabel} Lead\n\n` +
+  const text = `New ${type.toUpperCase()} Lead\n\n` +
     ['name', 'company', 'email', 'phone', 'service', 'source', 'pagePath', 'utm_source', 'utm_medium', 'utm_campaign']
       .map((k) => `${k}: ${lead[k] ?? '-'}`)
       .join('\n');
 
   const t = getTransporter();
+
+  console.log('Sending email:', {
+    from: `VerifyCheck <${from}>`,
+    to,
+    subject,
+    leadId: lead._id
+  });
 
   // Simple email sending without timeout (let Vercel handle function timeout)
   await t.sendMail({
@@ -84,4 +102,6 @@ export async function sendLeadEmail(params: {
     html,
     text,
   });
+
+  console.log('Email sent successfully for lead:', lead._id);
 }

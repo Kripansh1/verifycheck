@@ -131,15 +131,7 @@ const HeroSection = () => {
       sessionStorage.setItem("formSubmitted", "true");
       sessionStorage.setItem("formData", JSON.stringify(formData));
 
-      // Send email notification asynchronously (fire-and-forget)
-      fetch('/api/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'home',
-          lead: { ...formData, _id: leadResponse?.data?._id, source: 'Home Page' }
-        }),
-      }).catch(e => console.warn('Email notification failed:', e));
+
 
       // Track form submission conversion with Google Ads
       if (typeof window !== "undefined" && window.gtag) {

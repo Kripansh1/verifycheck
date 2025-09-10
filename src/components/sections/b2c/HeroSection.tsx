@@ -98,15 +98,7 @@ const B2CHeroSection = () => {
         console.warn('Failed to persist session data:', err);
       }
 
-      // Send email notification asynchronously (fire-and-forget)
-      fetch('/api/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'b2c',
-          lead: { ...formData, _id: leadResponse?.data?._id, source: 'Employee Verification' }
-        }),
-      }).catch(e => console.warn('Email notification failed:', e));
+
 
       if (typeof window !== "undefined" && (window as any).gtag) {
         (window as any).gtag("event", "conversion", {
