@@ -52,19 +52,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         meta,
       });
 
-      // Send response first, then email (fire-and-forget)
-      res.status(201).json({ success: true, data: doc });
-
-      // Send email asynchronously after response
-      setImmediate(async () => {
-        try {
-          await sendLeadEmail({ type: 'home', lead: doc.toObject?.() || (doc as any) });
-        } catch (e) {
-          console.error('Email send failed (home lead):', e);
-        }
-      });
-
-      return;
+      // Return response immediately - email will be handled separately
+      return res.status(201).json({ success: true, data: doc });
     } catch (error) {
       console.error('Create home lead error:', error);
       return res.status(500).json({ success: false, message: 'Failed to create home lead' });

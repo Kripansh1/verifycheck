@@ -45,7 +45,7 @@ const B2CHeroSection = () => {
   // Persist B2C lead to backend with timeout
   const saveLead = async (payload: { name: string; phone: string; email?: string; service?: string; source?: string; pagePath?: string }) => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
     try {
       const res = await fetch('/api/leads/b2c', {
@@ -97,6 +97,16 @@ const B2CHeroSection = () => {
       } catch (err) {
         console.warn('Failed to persist session data:', err);
       }
+
+      // Trigger email sending asynchronously (fire-and-forget)
+      fetch('/api/email-queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'b2c',
+          lead: { ...formData, _id: leadResponse?.data?._id, source: 'Employee Verification' }
+        }),
+      }).catch(e => console.warn('Email notification failed:', e));
 
 
 
