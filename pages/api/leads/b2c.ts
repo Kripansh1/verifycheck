@@ -64,19 +64,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         utm_campaign,
         meta,
       });
-      // Send response immediately without waiting for email
-      res.status(201).json({ success: true, data: doc });
-
-      // Send email in background after response is sent
-      process.nextTick(async () => {
-        try {
-          await sendLeadEmail({ type: 'b2c', lead: doc.toObject?.() || (doc as any) });
-        } catch (e) {
-          console.error('Email send failed (b2c lead):', e);
-        }
-      });
-
-      return;
+      // Return response immediately - no email sending in API
+      return res.status(201).json({ success: true, data: doc });
     } catch (error) {
       console.error('Create b2c lead error:', error);
       return res.status(500).json({ success: false, message: 'Failed to create b2c lead' });

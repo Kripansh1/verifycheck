@@ -67,7 +67,7 @@ const HeroSection = () => {
   // Persist lead to backend (Home/B2B leads) with timeout
   const saveLead = async (payload: HomeLeadPayload) => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout for Vercel
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
     try {
       const res = await fetch('/api/leads/home', {
@@ -130,6 +130,16 @@ const HeroSection = () => {
       // Store in session storage that form was submitted
       sessionStorage.setItem("formSubmitted", "true");
       sessionStorage.setItem("formData", JSON.stringify(formData));
+
+      // Send email notification asynchronously (fire-and-forget)
+      fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'home',
+          lead: { ...formData, _id: leadResponse?.data?._id, source: 'Home Page' }
+        }),
+      }).catch(e => console.warn('Email notification failed:', e));
 
       // Track form submission conversion with Google Ads
       if (typeof window !== "undefined" && window.gtag) {
