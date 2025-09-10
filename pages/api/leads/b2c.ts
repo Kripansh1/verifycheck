@@ -64,12 +64,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         utm_campaign,
         meta,
       });
-      // Fire-and-forget email
-      try {
-        await sendLeadEmail({ type: 'b2c', lead: doc.toObject?.() || (doc as any) });
-      } catch (e) {
-        console.error('Email send failed (b2c lead):', e);
-      }
+      // Fire-and-forget email (truly async, don't wait)
+      setImmediate(async () => {
+        try {
+          await sendLeadEmail({ type: 'b2c', lead: doc.toObject?.() || (doc as any) });
+        } catch (e) {
+          console.error('Email send failed (b2c lead):', e);
+        }
+      });
 
       return res.status(201).json({ success: true, data: doc });
     } catch (error) {

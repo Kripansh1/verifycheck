@@ -42,18 +42,32 @@ const B2CHeroSection = () => {
 
 
 
-  // Persist B2C lead to backend
+  // Persist B2C lead to backend with timeout
   const saveLead = async (payload: { name: string; phone: string; email?: string; service?: string; source?: string; pagePath?: string }) => {
-    const res = await fetch('/api/leads/b2c', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) {
-      const txt = await res.text();
-      throw new Error(`Lead save failed (${res.status}): ${txt}`);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+    try {
+      const res = await fetch('/api/leads/b2c', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`Lead save failed (${res.status}): ${txt}`);
+      }
+      return res.json();
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Request timeout - please try again');
+      }
+      throw error;
     }
-    return res.json();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -114,12 +128,6 @@ const B2CHeroSection = () => {
         sessionStorage.setItem("formSubmitted", "true");
         sessionStorage.setItem("formData", JSON.stringify(formData));
       } catch { }
-      // attempt DB save even on error (best-effort)
-      try {
-        await saveLead({ ...formData, source: 'Employee Verification', pagePath: typeof window !== 'undefined' ? window.location.pathname : undefined });
-      } catch (e) {
-        console.warn('Saving b2c lead failed after error (non-blocking):', e);
-      }
       router.push("/thank-you");
     } finally {
       setLoading(false);
