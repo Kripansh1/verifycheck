@@ -58,9 +58,9 @@ export async function sendLeadEmail(params: {
             <h2>New ${typeLabel} Lead</h2>
           </div>
           <div class="grid">
-            ${['name','company','email','phone','service','source','pagePath','utm_source','utm_medium','utm_campaign']
-              .map((k) => `<div class="row"><span class="label">${k}:</span> ${lead[k] ?? '-'} </div>`)
-              .join('')}
+            ${['name', 'company', 'email', 'phone', 'service', 'source', 'pagePath', 'utm_source', 'utm_medium', 'utm_campaign']
+      .map((k) => `<div class="row"><span class="label">${k}:</span> ${lead[k] ?? '-'} </div>`)
+      .join('')}
             <div class="row"><span class="label">Time:</span> ${new Date().toLocaleString()}</div>
             ${lead._id ? `<div class="row"><span class="label">Lead ID:</span> <code>${lead._id}</code></div>` : ''}
           </div>
@@ -70,16 +70,25 @@ export async function sendLeadEmail(params: {
   `;
 
   const text = `New ${typeLabel} Lead\n\n` +
-    ['name','company','email','phone','service','source','pagePath','utm_source','utm_medium','utm_campaign']
+    ['name', 'company', 'email', 'phone', 'service', 'source', 'pagePath', 'utm_source', 'utm_medium', 'utm_campaign']
       .map((k) => `${k}: ${lead[k] ?? '-'}`)
       .join('\n');
 
   const t = getTransporter();
-  await t.sendMail({
+
+  // Add timeout for email sending (Vercel serverless optimization)
+  const emailPromise = t.sendMail({
     from: `VerifyCheck <${from}>`,
     to,
     subject,
     html,
     text,
   });
+
+  // 5 second timeout for email sending
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('Email timeout')), 5000);
+  });
+
+  await Promise.race([emailPromise, timeoutPromise]);
 }

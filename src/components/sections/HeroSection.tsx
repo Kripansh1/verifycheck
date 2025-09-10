@@ -67,7 +67,7 @@ const HeroSection = () => {
   // Persist lead to backend (Home/B2B leads) with timeout
   const saveLead = async (payload: HomeLeadPayload) => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout for Vercel
 
     try {
       const res = await fetch('/api/leads/home', {

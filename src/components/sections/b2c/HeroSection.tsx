@@ -45,7 +45,7 @@ const B2CHeroSection = () => {
   // Persist B2C lead to backend with timeout
   const saveLead = async (payload: { name: string; phone: string; email?: string; service?: string; source?: string; pagePath?: string }) => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout for Vercel
 
     try {
       const res = await fetch('/api/leads/b2c', {

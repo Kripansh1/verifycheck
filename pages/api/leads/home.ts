@@ -52,14 +52,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         meta,
       });
 
-      // Fire-and-forget email notification (truly async, don't wait)
-      setImmediate(async () => {
-        try {
-          await sendLeadEmail({ type: 'home', lead: doc.toObject?.() || (doc as any) });
-        } catch (e) {
-          console.error('Email send failed (home lead):', e);
-        }
-      });
+      // Fire-and-forget email notification (Vercel serverless optimized)
+      // Use Promise without await to truly fire-and-forget
+      sendLeadEmail({ type: 'home', lead: doc.toObject?.() || (doc as any) })
+        .catch(e => console.error('Email send failed (home lead):', e));
 
       return res.status(201).json({ success: true, data: doc });
     } catch (error) {
