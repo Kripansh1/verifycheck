@@ -76,19 +76,12 @@ export async function sendLeadEmail(params: {
 
   const t = getTransporter();
 
-  // Add timeout for email sending (Vercel serverless optimization)
-  const emailPromise = t.sendMail({
+  // Simple email sending without timeout (let Vercel handle function timeout)
+  await t.sendMail({
     from: `VerifyCheck <${from}>`,
     to,
     subject,
     html,
     text,
   });
-
-  // 5 second timeout for email sending
-  const timeoutPromise = new Promise((_, reject) => {
-    setTimeout(() => reject(new Error('Email timeout')), 5000);
-  });
-
-  await Promise.race([emailPromise, timeoutPromise]);
 }

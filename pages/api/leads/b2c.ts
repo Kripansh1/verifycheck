@@ -64,12 +64,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         utm_campaign,
         meta,
       });
-      // Fire-and-forget email (Vercel serverless optimized)
-      // Use Promise without await to truly fire-and-forget
-      sendLeadEmail({ type: 'b2c', lead: doc.toObject?.() || (doc as any) })
-        .catch(e => console.error('Email send failed (b2c lead):', e));
+      // Send response immediately without waiting for email
+      res.status(201).json({ success: true, data: doc });
 
-      return res.status(201).json({ success: true, data: doc });
+      // Send email in background after response is sent
+      process.nextTick(async () => {
+        try {
+          await sendLeadEmail({ type: 'b2c', lead: doc.toObject?.() || (doc as any) });
+        } catch (e) {
+          console.error('Email send failed (b2c lead):', e);
+        }
+      });
+
+      return;
     } catch (error) {
       console.error('Create b2c lead error:', error);
       return res.status(500).json({ success: false, message: 'Failed to create b2c lead' });
