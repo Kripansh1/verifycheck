@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "functions": {
+    "pages/api/leads/home.js": {
+      "maxDuration": 10
+    },
+    "pages/api/leads/b2c.js": {
+      "maxDuration": 10
+    }
+  },
+  "regions": [
+    "bom1"
+  ]
+}
